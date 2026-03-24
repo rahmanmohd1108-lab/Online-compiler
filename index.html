@@ -3,151 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interview Compiler (Fixed)</title>
+    <title>Interview Compiler (Rextester)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <style>
-        /* Reset & Layout */
+        :root { --bg: #1e1e1e; --panel: #252526; --border: #3e3e42; --accent: #007acc; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #1e1e1e;
-            color: white;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; height: 100vh; display: flex; flex-direction: column; }
 
         /* Toolbar */
         .toolbar {
-            height: 50px;
-            background-color: #2d2d2d;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            gap: 10px;
-            border-bottom: 1px solid #444;
+            height: 50px; background: var(--panel); display: flex; align-items: center;
+            padding: 0 15px; gap: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0;
         }
         input[type="text"] {
-            padding: 6px;
-            border-radius: 4px;
-            border: 1px solid #555;
-            background: #3c3c3c;
-            color: white;
-            width: 150px;
+            padding: 6px; border-radius: 4px; border: 1px solid #555;
+            background: #3c3c3c; color: #fff; width: 150px;
         }
         select, button {
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
+            padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;
         }
-        button { background-color: #007acc; color: white; }
-        button:hover { background-color: #005f9e; }
-        .btn-secondary { background-color: #444; }
+        button { background: var(--accent); color: #fff; }
+        button:hover { background: #005f9e; }
+        .btn-file { background: #444; }
 
-        /* Main Container: Flex Row */
-        .main-container {
-            display: flex;
-            flex: 1; /* Fills remaining height */
-            overflow: hidden;
-        }
+        /* Layout */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Code Section (3/5) */
+        .code-panel { flex: 3; display: flex; flex-direction: column; border-right: 2px solid var(--border); }
+        
+        /* IO Section (2/5) */
+        .io-panel { flex: 2; display: flex; flex-direction: column; }
 
-        /* Left: 3/5 Width */
-        .code-panel {
-            flex: 3;
-            display: flex;
-            flex-direction: column;
-            border-right: 2px solid #444;
-        }
-
-        /* Right: 2/5 Width */
-        .io-panel {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Split Right side into Input/Output */
-        .io-section {
-            flex: 1; /* Each takes 1/2 of the right panel */
-            display: flex;
-            flex-direction: column;
-            border-bottom: 1px solid #444;
-        }
+        .io-section { flex: 1; display: flex; flex-direction: column; border-bottom: 1px solid var(--border); }
         .io-section:last-child { border-bottom: none; }
 
-        .header {
-            background-color: #252526;
-            padding: 5px 10px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #bbb;
-            border-bottom: 1px solid #3e3e42;
-        }
-
-        /* Editor & Textareas */
+        .header { background: #2d2d2d; padding: 5px 10px; font-size: 12px; color: #aaa; border-bottom: 1px solid var(--border); }
+        
         #editor { width: 100%; flex: 1; font-size: 16px; }
         textarea {
-            width: 100%;
-            flex: 1;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            border: none;
-            resize: none;
-            padding: 10px;
-            font-family: 'Consolas', monospace;
-            font-size: 14px;
-            outline: none;
+            width: 100%; flex: 1; background: #1e1e1e; color: #d4d4d4;
+            border: none; resize: none; padding: 10px;
+            font-family: 'Consolas', monospace; font-size: 14px; outline: none;
         }
-
-        /* Tab Visuals */
-        .tab-bar {
-            background-color: #252526;
-            padding-left: 10px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            height: 30px;
-            color: #fff;
-        }
-        #status { color: #888; font-size: 12px; margin-left: auto; }
+        .tab { padding: 5px 10px; background: #2d2d2d; font-size: 13px; color: #fff; }
     </style>
 </head>
 <body>
 
-    <!-- Toolbar -->
     <div class="toolbar">
-        <input type="text" id="fileName" placeholder="filename.cpp" value="main.cpp">
-        <button class="btn-secondary" onclick="createFile()">+ Create</button>
+        <input type="text" id="fileName" value="main.cpp">
+        <button class="btn-file" onclick="createFile()">+ Create</button>
         
-        <select id="language" onchange="updateLang()">
-            <option value="cpp">C++ (GCC)</option>
-            <option value="c">C (GCC)</option>
-            <option value="python">Python 3</option>
+        <select id="language" onchange="changeLanguage()">
+            <option value="cpp">C++</option>
+            <option value="python">Python</option>
             <option value="java">Java</option>
+            <option value="c">C</option>
         </select>
-        
-        <button onclick="runCode()">▶ Run</button>
-        <span id="status">Ready</span>
+
+        <button onclick="executeCode()">▶ Run</button>
+        <span id="status" style="color: #888; font-size: 12px;">Ready</span>
     </div>
 
-    <!-- Main Layout -->
     <div class="main-container">
-        <!-- Code Editor (Left) -->
         <div class="code-panel">
-            <div class="tab-bar" id="activeTab">main.cpp</div>
+            <div class="tab" id="activeTab">main.cpp</div>
             <div id="editor"></div>
         </div>
-
-        <!-- Input/Output (Right) -->
         <div class="io-panel">
-            <!-- Input Box -->
             <div class="io-section">
                 <div class="header">INPUT (stdin)</div>
                 <textarea id="inputBox" placeholder="Enter input here..."></textarea>
             </div>
-            <!-- Output Box -->
             <div class="io-section">
                 <div class="header">OUTPUT</div>
                 <textarea id="outputBox" readonly placeholder="Output appears here..."></textarea>
@@ -160,107 +88,160 @@
         var editor = ace.edit("editor");
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/c_cpp");
-        editor.setValue(`#include <iostream>
+
+        // 2. Boilerplate Code
+        const boilerplate = {
+            'cpp': `#include <iostream>
 using namespace std;
 
 int main() {
-    int x, y;
-    // Read input from stdin
-    if (cin >> x >> y) {
-        cout << "Sum: " << (x + y) << endl;
-    }
+    int a, b;
+    cin >> a >> b;
+    cout << "Sum: " << (a + b) << endl;
     return 0;
-}`, -1);
+}`,
+            'python': `# Python Code
+import sys
 
-        // 2. Configuration for Wandbox API
-        // Wandbox uses specific compiler names
-        const compilers = {
-            'cpp': { name: 'gcc-head', ext: 'cpp' },
-            'c':   { name: 'gcc-head-c', ext: 'c' },
-            'python': { name: 'cpython-3.10.0', ext: 'py' },
-            'java': { name: 'openjdk-head', ext: 'java' }
+def solve():
+    try:
+        # Read all input from stdin
+        input_data = sys.stdin.read().split()
+        a = int(input_data[0])
+        b = int(input_data[1])
+        print("Sum:", a + b)
+    except Exception as e:
+        print("Error:", e)
+
+if __name__ == "__main__":
+    solve()`,
+            'java': `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int a = sc.nextInt();
+        int b = sc.nextInt();
+        System.out.println("Sum: " + (a + b));
+    }
+}`,
+            'c': `#include <stdio.h>
+
+int main() {
+    int a, b;
+    scanf("%d %d", &a, &b);
+    printf("Sum: %d\\n", a + b);
+    return 0;
+}`
         };
 
-        // 3. Change Editor Language
-        function updateLang() {
-            let lang = document.getElementById('language').value;
-            if(lang === 'c' || lang === 'cpp') editor.session.setMode("ace/mode/c_cpp");
-            else if(lang === 'python') editor.session.setMode("ace/mode/python");
+        // 3. Rextester Language IDs
+        const langIds = {
+            'cpp': 6,   // C++ (GCC)
+            'c': 1,     // C (GCC)
+            'java': 4,  // Java
+            'python': 24 // Python 3
+        };
+
+        // 4. Switch Language
+        function changeLanguage() {
+            var lang = document.getElementById('language').value;
+            
+            // Update Editor Mode
+            if(lang === 'python') editor.session.setMode("ace/mode/python");
             else if(lang === 'java') editor.session.setMode("ace/mode/java");
+            else editor.session.setMode("ace/mode/c_cpp");
+
+            // Update Filename extension
+            var nameInput = document.getElementById('fileName');
+            var name = nameInput.value.split('.')[0];
+            var ext = lang === 'python' ? 'py' : lang === 'java' ? 'java' : lang === 'c' ? 'c' : 'cpp';
+            nameInput.value = name + "." + ext;
+            document.getElementById('activeTab').innerText = nameInput.value;
+
+            // Load Boilerplate
+            editor.setValue(boilerplate[lang], -1);
+            setStatus("Ready");
         }
 
-        // 4. Create File Logic
+        // 5. Create File Logic
         function createFile() {
             let name = document.getElementById('fileName').value;
-            if(!name) return;
-            
             document.getElementById('activeTab').innerText = name;
             editor.setValue("");
             editor.focus();
-
-            // Simple auto-detect
-            if(name.endsWith('.py')) document.getElementById('language').value = 'python';
-            else if(name.endsWith('.java')) document.getElementById('language').value = 'java';
-            else if(name.endsWith('.c')) document.getElementById('language').value = 'c';
-            else document.getElementById('language').value = 'cpp';
-            
-            updateLang();
-            setStatus("Created " + name);
+            setStatus("New File: " + name);
         }
 
-        // 5. Execute Code using Wandbox API
-        async function runCode() {
-            const code = editor.getValue();
-            const input = document.getElementById('inputBox').value;
-            const langKey = document.getElementById('language').value;
-            const config = compilers[langKey];
-            
-            document.getElementById('outputBox').value = "Executing...";
-            setStatus("Connecting to compiler...");
+        // 6. Execute Code (Using Rextester API via allorigins proxy to bypass CORS)
+        async function executeCode() {
+            var code = editor.getValue();
+            var input = document.getElementById('inputBox').value;
+            var langKey = document.getElementById('language').value;
+            var langId = langIds[langKey];
+            var outputBox = document.getElementById('outputBox');
 
-            // Wandbox requires specific JSON structure
-            const body = {
-                compiler: config.name,
-                code: code,
-                stdin: input,
-                options: "warning,gnu++1y" // Compiler options
-            };
+            outputBox.value = "Executing...";
+            setStatus("Connecting...");
+
+            // Construct the form data payload required by Rextester
+            var body = new URLSearchParams();
+            body.append('LanguageChoiceWrapper', langId);
+            body.append('Program', code);
+            body.append('Input', input);
+            body.append('CompilerArgs', ''); 
+
+            // We use a proxy to bypass CORS restrictions for local files
+            // Rextester endpoint
+            var targetUrl = 'https://rextester.com/rundotnet/api';
+            var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
             try {
-                const response = await fetch('https://wandbox.org/api/compile.json', {
+                const response = await fetch(proxyUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString(),
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
 
                 const result = await response.json();
 
-                // Build Output string
-                let output = "";
+                // Rextester returns: { Result: "output", Warnings: "...", Errors: "...", Stats: "..." }
+                let finalOutput = "";
                 
-                // Check for compiler errors first
-                if (result.compiler_error) {
-                    output = "=== Compilation Error ===\n" + result.compiler_error;
+                if (result.Errors) {
+                    finalOutput = "=== Errors ===\n" + result.Errors;
                 } 
-                // Check for program output
-                else if (result.program_output) {
-                    output = result.program_output;
-                } 
-                // Check for runtime errors
-                else if (result.program_error) {
-                    output = "=== Runtime Error ===\n" + result.program_error;
+                
+                if (result.Result) {
+                    finalOutput += result.Result;
                 }
-                // Fallback
-                else {
-                    output = JSON.stringify(result, null, 2);
+                
+                if (!finalOutput) {
+                    finalOutput = "(No output or empty response)";
                 }
 
-                document.getElementById('outputBox').value = output;
-                setStatus("Execution finished");
+                outputBox.value = finalOutput;
+                setStatus("Done");
 
             } catch (error) {
-                document.getElementById('outputBox').value = "Error: Could not connect to Wandbox API.\nPlease check your internet connection.\n\n" + error;
-                setStatus("Network Error");
+                if (error.name === 'AbortError') {
+                    outputBox.value = "Error: Request Timed Out (15s).\nThe server might be busy.";
+                    setStatus("Timeout");
+                } else {
+                    outputBox.value = "Error: Failed to connect to Execution Server.\n\nDetails: " + error.message + 
+                                      "\n\nTroubleshooting:\n1. Check your internet connection.\n2. If you are using a corporate laptop, try using your personal WiFi.\n3. Try running this file using a local server (e.g., 'Live Server' in VS Code).";
+                    setStatus("Error");
+                }
             }
         }
 
