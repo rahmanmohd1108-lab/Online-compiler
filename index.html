@@ -3,341 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Interview Compiler</title>
-    <!-- Load Ace Editor for Syntax Highlighting -->
+    <title>Interview Compiler (Fixed)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <style>
-        :root {
-            --bg-dark: #1e1e1e;
-            --bg-panel: #252526;
-            --accent: #007acc;
-            --text-light: #d4d4d4;
-            --border: #3e3e42;
+        /* Reset & Layout */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1e1e1e;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
+        /* Toolbar */
+        .toolbar {
+            height: 50px;
+            background-color: #2d2d2d;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 10px;
+            border-bottom: 1px solid #444;
+        }
+        input[type="text"] {
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #3c3c3c;
+            color: white;
+            width: 150px;
+        }
+        select, button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button { background-color: #007acc; color: white; }
+        button:hover { background-color: #005f9e; }
+        .btn-secondary { background-color: #444; }
+
+        /* Main Container: Flex Row */
+        .main-container {
+            display: flex;
+            flex: 1; /* Fills remaining height */
             overflow: hidden;
         }
 
-        /* Top Toolbar */
-        .toolbar {
-            height: 50px;
-            background-color: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
+        /* Left: 3/5 Width */
+        .code-panel {
+            flex: 3;
             display: flex;
-            align-items: center;
-            padding: 0 20px;
-            gap: 15px;
+            flex-direction: column;
+            border-right: 2px solid #444;
         }
 
-        .file-group {
+        /* Right: 2/5 Width */
+        .io-panel {
+            flex: 2;
             display: flex;
-            gap: 5px;
+            flex-direction: column;
         }
 
-        input[type="text"] {
-            background-color: #3c3c3c;
-            border: 1px solid #555;
-            color: white;
+        /* Split Right side into Input/Output */
+        .io-section {
+            flex: 1; /* Each takes 1/2 of the right panel */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid #444;
+        }
+        .io-section:last-child { border-bottom: none; }
+
+        .header {
+            background-color: #252526;
             padding: 5px 10px;
-            border-radius: 4px;
-        }
-
-        select, button {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button:hover {
-            background-color: #005a9e;
-        }
-
-        button.secondary {
-            background-color: #3c3c3c;
-            border: 1px solid #555;
-        }
-        
-        button.secondary:hover {
-            background-color: #4e4e4e;
-        }
-
-        /* Main Container Layout */
-        .main-container {
-            display: flex;
-            height: calc(100vh - 50px); /* Full height minus toolbar */
-            width: 100%;
-        }
-
-        /* 3/5 Code Section */
-        .code-section {
-            flex: 3; /* 3 parts of 5 */
-            background-color: var(--bg-dark);
-            position: relative;
-            border-right: 2px solid var(--border);
-        }
-
-        /* 2/5 Right Side Container (Input + Output) */
-        .io-container {
-            flex: 2; /* 2 parts of 5 */
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 1/5 Input Section */
-        .input-section {
-            flex: 1; /* 1 part of the 2 */
-            background-color: #1a1a1a;
-            border-bottom: 2px solid var(--border);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 1/5 Output Section */
-        .output-section {
-            flex: 1; /* 1 part of the 2 */
-            background-color: #1a1a1a;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .section-header {
-            background-color: #2d2d2d;
-            padding: 8px 15px;
             font-size: 12px;
             font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #bbbbbb;
-            border-bottom: 1px solid var(--border);
+            color: #bbb;
+            border-bottom: 1px solid #3e3e42;
         }
 
         /* Editor & Textareas */
-        #editor {
-            width: 100%;
-            height: 100%;
-            font-size: 16px;
-        }
-
+        #editor { width: 100%; flex: 1; font-size: 16px; }
         textarea {
             width: 100%;
-            height: 100%;
-            background-color: #1a1a1a;
-            color: var(--text-light);
+            flex: 1;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
             border: none;
             resize: none;
             padding: 10px;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: 'Consolas', monospace;
             font-size: 14px;
             outline: none;
-            box-sizing: border-box;
         }
 
-        /* Tabs for open files */
-        .tabs {
-            display: flex;
+        /* Tab Visuals */
+        .tab-bar {
             background-color: #252526;
-            height: 30px;
-            align-items: center;
             padding-left: 10px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .tab {
-            padding: 5px 15px;
             font-size: 13px;
-            cursor: pointer;
-            background-color: #2d2d2d;
-            margin-right: 2px;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
+            display: flex;
+            align-items: center;
+            height: 30px;
+            color: #fff;
         }
-
-        .tab.active {
-            background-color: #1e1e1e;
-            border-bottom: 1px solid #1e1e1e; /* Merge with editor */
-            margin-bottom: -1px;
-        }
+        #status { color: #888; font-size: 12px; margin-left: auto; }
     </style>
 </head>
 <body>
 
     <!-- Toolbar -->
     <div class="toolbar">
-        <div class="file-group">
-            <input type="text" id="fileName" placeholder="File Name (e.g., main.cpp)" value="main.cpp">
-            <button class="secondary" onclick="createFile()">+ Create File</button>
-        </div>
+        <input type="text" id="fileName" placeholder="filename.cpp" value="main.cpp">
+        <button class="btn-secondary" onclick="createFile()">+ Create</button>
         
-        <select id="language" onchange="changeLanguage()">
-            <option value="c_cpp">C++</option>
-            <option value="c">C</option>
-            <option value="python">Python</option>
+        <select id="language" onchange="updateLang()">
+            <option value="cpp">C++ (GCC)</option>
+            <option value="c">C (GCC)</option>
+            <option value="python">Python 3</option>
             <option value="java">Java</option>
         </select>
-
+        
         <button onclick="runCode()">▶ Run</button>
+        <span id="status">Ready</span>
     </div>
 
-    <!-- Main Layout: Flex Row -->
+    <!-- Main Layout -->
     <div class="main-container">
-        
-        <!-- Left: 3/5 Code Editor -->
-        <div class="code-section">
-            <div class="tabs">
-                <div class="tab active" id="activeTab">main.cpp</div>
-            </div>
+        <!-- Code Editor (Left) -->
+        <div class="code-panel">
+            <div class="tab-bar" id="activeTab">main.cpp</div>
             <div id="editor"></div>
         </div>
 
-        <!-- Right: 2/5 Split (Input/Output) -->
-        <div class="io-container">
-            
-            <!-- Top Right: 1/5 Input -->
-            <div class="input-section">
-                <div class="section-header">Input (stdin)</div>
-                <textarea id="inputBox" placeholder="Enter your input here..."></textarea>
+        <!-- Input/Output (Right) -->
+        <div class="io-panel">
+            <!-- Input Box -->
+            <div class="io-section">
+                <div class="header">INPUT (stdin)</div>
+                <textarea id="inputBox" placeholder="Enter input here..."></textarea>
             </div>
-
-            <!-- Bottom Right: 1/5 Output -->
-            <div class="output-section">
-                <div class="section-header">Output</div>
-                <textarea id="outputBox" readonly placeholder="Output will appear here..."></textarea>
+            <!-- Output Box -->
+            <div class="io-section">
+                <div class="header">OUTPUT</div>
+                <textarea id="outputBox" readonly placeholder="Output appears here..."></textarea>
             </div>
         </div>
     </div>
 
     <script>
-        // Initialize Ace Editor
+        // 1. Initialize Editor
         var editor = ace.edit("editor");
         editor.setTheme("ace/theme/monokai");
-        editor.session.setMode("ace/mode/c_cpp"); // Default C++
+        editor.session.setMode("ace/mode/c_cpp");
         editor.setValue(`#include <iostream>
 using namespace std;
 
 int main() {
-    int a, b;
-    cin >> a >> b;
-    cout << "Sum: " << (a + b) << endl;
+    int x, y;
+    // Read input from stdin
+    if (cin >> x >> y) {
+        cout << "Sum: " << (x + y) << endl;
+    }
     return 0;
 }`, -1);
 
-        // Store files locally
-        let files = {
-            "main.cpp": editor.getValue()
+        // 2. Configuration for Wandbox API
+        // Wandbox uses specific compiler names
+        const compilers = {
+            'cpp': { name: 'gcc-head', ext: 'cpp' },
+            'c':   { name: 'gcc-head-c', ext: 'c' },
+            'python': { name: 'cpython-3.10.0', ext: 'py' },
+            'java': { name: 'openjdk-head', ext: 'java' }
         };
 
-        // Change Language Logic
-        function changeLanguage() {
-            var lang = document.getElementById('language').value;
-            let mode = "";
-            
-            if(lang === 'c' || lang === 'c_cpp') mode = "ace/mode/c_cpp";
-            else if(lang === 'python') mode = "ace/mode/python";
-            else if(lang === 'java') mode = "ace/mode/java";
-            
-            editor.session.setMode(mode);
-            
-            // Default boilerplate if editor is empty or generic
-            if(lang === 'python' && !editor.getValue().includes('def')) {
-                // Optional: Auto-switch logic
-            }
+        // 3. Change Editor Language
+        function updateLang() {
+            let lang = document.getElementById('language').value;
+            if(lang === 'c' || lang === 'cpp') editor.session.setMode("ace/mode/c_cpp");
+            else if(lang === 'python') editor.session.setMode("ace/mode/python");
+            else if(lang === 'java') editor.session.setMode("ace/mode/java");
         }
 
-        // Create File Logic
+        // 4. Create File Logic
         function createFile() {
-            let name = document.getElementById('fileName').value.trim();
-            if (!name) return alert("Please enter a file name");
-
-            // Simple logic to determine language from extension
-            if(name.endsWith('.py')) {
-                document.getElementById('language').value = 'python';
-                changeLanguage();
-            } else if(name.endsWith('.java')) {
-                document.getElementById('language').value = 'java';
-                changeLanguage();
-            } else {
-                document.getElementById('language').value = 'c_cpp';
-                changeLanguage();
-            }
-
-            files[name] = ""; // Add to storage
+            let name = document.getElementById('fileName').value;
+            if(!name) return;
+            
             document.getElementById('activeTab').innerText = name;
             editor.setValue("");
             editor.focus();
-            console.log("File created: " + name);
+
+            // Simple auto-detect
+            if(name.endsWith('.py')) document.getElementById('language').value = 'python';
+            else if(name.endsWith('.java')) document.getElementById('language').value = 'java';
+            else if(name.endsWith('.c')) document.getElementById('language').value = 'c';
+            else document.getElementById('language').value = 'cpp';
+            
+            updateLang();
+            setStatus("Created " + name);
         }
 
-        // Run Code Logic (Uses Piston API)
+        // 5. Execute Code using Wandbox API
         async function runCode() {
-            var code = editor.getValue();
-            var input = document.getElementById('inputBox').value;
-            var languageSelect = document.getElementById('language');
-            var langVal = languageSelect.value;
-            var outputBox = document.getElementById('outputBox');
-
-            outputBox.value = "Executing...";
-
-            // Map UI language to Piston API language strings
-            let pistonLang = "c++";
-            let version = "10.2.0";
+            const code = editor.getValue();
+            const input = document.getElementById('inputBox').value;
+            const langKey = document.getElementById('language').value;
+            const config = compilers[langKey];
             
-            if(langVal === 'python') {
-                pistonLang = "python";
-                version = "3.10.0";
-            } else if(langVal === 'java') {
-                pistonLang = "java";
-                version = "15.0.2";
-            } else if(langVal === 'c') {
-                pistonLang = "c";
-                version = "10.2.0";
-            }
+            document.getElementById('outputBox').value = "Executing...";
+            setStatus("Connecting to compiler...");
 
-            // Prepare request
-            const requestData = {
-                language: pistonLang,
-                version: version,
-                files: [
-                    {
-                        name: document.getElementById('fileName').value || "main.cpp",
-                        content: code
-                    }
-                ],
-                stdin: input
+            // Wandbox requires specific JSON structure
+            const body = {
+                compiler: config.name,
+                code: code,
+                stdin: input,
+                options: "warning,gnu++1y" // Compiler options
             };
 
             try {
-                const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+                const response = await fetch('https://wandbox.org/api/compile.json', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestData)
+                    body: JSON.stringify(body)
                 });
 
                 const result = await response.json();
+
+                // Build Output string
+                let output = "";
                 
-                if (result.run) {
-                    outputBox.value = result.run.output;
-                    if (result.run.stderr) {
-                        outputBox.value += "\n--- Errors ---\n" + result.run.stderr;
-                    }
-                } else {
-                    outputBox.value = "Error: " + JSON.stringify(result.message);
+                // Check for compiler errors first
+                if (result.compiler_error) {
+                    output = "=== Compilation Error ===\n" + result.compiler_error;
+                } 
+                // Check for program output
+                else if (result.program_output) {
+                    output = result.program_output;
+                } 
+                // Check for runtime errors
+                else if (result.program_error) {
+                    output = "=== Runtime Error ===\n" + result.program_error;
+                }
+                // Fallback
+                else {
+                    output = JSON.stringify(result, null, 2);
                 }
 
+                document.getElementById('outputBox').value = output;
+                setStatus("Execution finished");
+
             } catch (error) {
-                outputBox.value = "Network Error: Could not connect to execution API.";
-                console.error(error);
+                document.getElementById('outputBox').value = "Error: Could not connect to Wandbox API.\nPlease check your internet connection.\n\n" + error;
+                setStatus("Network Error");
             }
+        }
+
+        function setStatus(msg) {
+            document.getElementById('status').innerText = msg;
         }
     </script>
 </body>
